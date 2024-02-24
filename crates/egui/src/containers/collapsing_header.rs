@@ -2,6 +2,7 @@ use std::hash::Hash;
 
 use crate::*;
 use epaint::Shape;
+use epaint::text::{TextWrapping};
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -374,6 +375,7 @@ pub struct CollapsingHeader {
     selectable: bool,
     selected: bool,
     show_background: bool,
+    header_truncate: bool,
     icon: Option<IconPainter>,
 }
 
@@ -396,6 +398,7 @@ impl CollapsingHeader {
             selectable: false,
             selected: false,
             show_background: false,
+            header_truncate: false,
             icon: None,
         }
     }
@@ -472,6 +475,12 @@ impl CollapsingHeader {
         self.icon = Some(Box::new(icon_fn));
         self
     }
+
+    #[inline]
+    pub fn header_truncate(mut self, truncate: bool) -> Self {
+        self.header_truncate = truncate;
+        self
+    }
 }
 
 struct Prepared {
@@ -496,6 +505,7 @@ impl CollapsingHeader {
             selectable,
             selected,
             show_background,
+            header_truncate,
         } = self;
 
         // TODO(emilk): horizontal layout, with icon and text as labels. Insert background behind using Frame.
@@ -506,8 +516,16 @@ impl CollapsingHeader {
         let available = ui.available_rect_before_wrap();
         let text_pos = available.min + vec2(ui.spacing().indent, 0.0);
         let wrap_width = available.right() - text_pos.x;
-        let wrap = Some(false);
-        let galley = text.into_galley(ui, wrap, wrap_width, TextStyle::Button);
+        let wrap = Some(header_truncate);
+
+        let galley = if header_truncate {
+            let mut layout = text.into_layout_job(&Style::default(), FontSelection::Default, Align::Min);
+            layout.wrap = TextWrapping::truncate_at_width(wrap_width);
+            let layout = WidgetText::LayoutJob(layout);
+             layout.into_galley(ui, wrap, wrap_width, TextStyle::Button)
+        } else {
+            text.into_galley(ui, wrap, wrap_width, TextStyle::Button)
+        };
         let text_max_x = text_pos.x + galley.size().x;
 
         let mut desired_width = text_max_x + button_padding.x - available.left();
@@ -520,6 +538,13 @@ impl CollapsingHeader {
         let (_, rect) = ui.allocate_space(desired_size);
 
         let mut header_response = ui.interact(rect, id, Sense::click());
+
+        let mut header_response = if galley.elided {
+            header_response.on_hover_text(galley.text())
+        } else {
+            header_response
+        };
+
         let text_pos = pos2(
             text_pos.x,
             header_response.rect.center().y - galley.size().y / 2.0,
