@@ -49,6 +49,8 @@ impl BytesLoader for FileLoader {
             return Err(LoadError::NotSupported);
         };
         let path = path.split('?').next().unwrap_or(path);
+        let uri_string = format!("{}{}", PROTOCOL, path);
+        let uri = uri_string.as_str();
 
         let mut cache = self.cache.lock();
         if let Some(entry) = cache.get(uri).cloned() {
