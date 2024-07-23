@@ -1325,6 +1325,7 @@ dependencies = [
  "resvg",
  "serde",
  "syntect",
+ "url",
 ]
 
 [[package]]
