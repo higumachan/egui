@@ -72,9 +72,6 @@ impl ImageProcessingParameter {
                 }
                 CONTRAST => {
                     let contrast = value.parse().map_err(|_| format!("Failed to parse contrast value: {}", value))?;
-                    if contrast < -1.0 || contrast > 1.0 {
-                        return Err(format!("contrast value must be between -1.0 and 1.0, got: {}", contrast));
-                    }
                     params.contrast = contrast;
                 }
                 BRIGHTEN => {
