@@ -90,7 +90,7 @@ impl ImageProcessingParameter {
             1 => rotate90(image),
             2 => rotate180(image),
             3 => rotate270(image),
-            _ => image.as_rgba8().ok_or_else(|| "Failed to convert image to RGBA8")?.clone(),
+            _ => image.to_rgba8(),
         };
 
         if self.contrast != 0.0 {
@@ -238,6 +238,48 @@ mod tests {
     #[test]
     fn apply_processing_rotate() {
         let image = DynamicImage::new_rgba8(100, 200);
+        let params = ImageProcessingParameter {
+            rotate_90_angle: 1,
+            contrast: 0.0,
+            brighten: 0,
+        };
+        let processed = params.apply(&image).unwrap();
+        assert_eq!(processed.width(), 200);
+        assert_eq!(processed.height(), 100);
+
+        let params = ImageProcessingParameter {
+            rotate_90_angle: 2,
+            contrast: 0.0,
+            brighten: 0,
+        };
+        let processed = params.apply(&image).unwrap();
+        assert_eq!(processed.width(), 100);
+        assert_eq!(processed.height(), 200);
+
+        let params = ImageProcessingParameter {
+            rotate_90_angle: 3,
+            contrast: 0.0,
+            brighten: 0,
+        };
+        let processed = params.apply(&image).unwrap();
+        assert_eq!(processed.width(), 200);
+        assert_eq!(processed.height(), 100);
+    }
+
+    #[test]
+    fn apply_processing_rotate_mono() {
+        let image = DynamicImage::new_luma8(100, 200);
+        let params = ImageProcessingParameter {
+            rotate_90_angle: 0,
+            contrast: 0.0,
+            brighten: 0,
+        };
+        let processed = params.apply(&image).unwrap();
+        assert_eq!(processed.width(), 100);
+        assert_eq!(processed.height(), 200);
+
+
+        let image = DynamicImage::new_luma8(100, 200);
         let params = ImageProcessingParameter {
             rotate_90_angle: 1,
             contrast: 0.0,

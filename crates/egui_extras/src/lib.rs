@@ -33,8 +33,9 @@ pub use crate::sizing::Size;
 pub use crate::strip::*;
 pub use crate::table::*;
 
-pub use loaders::{install_image_loaders, ImageProcessingParameter};
-
+pub use loaders::{install_image_loaders};
+#[cfg(feature = "image")]
+pub use loaders::ImageProcessingParameter;
 // ---------------------------------------------------------------------------
 
 mod profiling_scopes {
