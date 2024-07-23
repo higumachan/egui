@@ -50,7 +50,7 @@ http = ["dep:ehttp"]
 ## ```toml
 ## image = { version = "0.25", features = ["jpeg", "png"] } # Add the types you want support for
 ## ```
-image = ["dep:image"]
+image = ["dep:image", "dep:url"]
 
 ## Enable profiling with the [`puffin`](https://docs.rs/puffin) crate.
 ##
@@ -106,3 +106,6 @@ resvg = { version = "0.37", optional = true, default-features = false }
 
 # http feature
 ehttp = { version = "0.5", optional = true, default-features = false }
+
+# url parsing
+url = { version = "2", optional = true, default-features = false }
