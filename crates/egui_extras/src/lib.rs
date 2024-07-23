@@ -33,7 +33,7 @@ pub use crate::sizing::Size;
 pub use crate::strip::*;
 pub use crate::table::*;
 
-pub use loaders::install_image_loaders;
+pub use loaders::{install_image_loaders, ImageProcessingParameter};
 
 // ---------------------------------------------------------------------------
 

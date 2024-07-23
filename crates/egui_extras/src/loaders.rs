@@ -113,3 +113,5 @@ mod gif_loader;
 mod image_loader;
 #[cfg(feature = "svg")]
 mod svg_loader;
+
+pub use image_loader::ImageProcessingParameter;
