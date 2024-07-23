@@ -114,4 +114,5 @@ mod image_loader;
 #[cfg(feature = "svg")]
 mod svg_loader;
 
+#[cfg(feature = "image")]
 pub use image_loader::ImageProcessingParameter;

@@ -20,6 +20,16 @@ impl ImageCrateLoader {
 }
 
 /// Parameters for image processing.
+///
+/// # Examples
+///
+/// ```rust
+/// use egui_extras::ImageProcessingParameter;
+///
+/// let params = ImageProcessingParameter::new(1, 0.5, 10);
+///
+/// assert_eq!(params.into_url_params(), "?rotate-90-angle=1&contrast=0.5&brighten=10");
+/// ```
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ImageProcessingParameter {
     /// Affine transformations Rotate an image 90 degrees clockwise.
@@ -35,6 +45,14 @@ const CONTRAST: &str = "contrast";
 const BRIGHTEN: &str = "brighten";
 
 impl ImageProcessingParameter {
+    pub fn new(rotate_90_angle: u8, contrast: f32, brighten: i32) -> Self {
+        Self {
+            rotate_90_angle,
+            contrast,
+            brighten,
+        }
+    }
+
     pub fn into_url_params(&self) -> String {
         format!("?{}={}&{}={}&{}={}", ROTATE_90_ANGLE, self.rotate_90_angle, CONTRAST, self.contrast, BRIGHTEN, self.brighten)
     }
