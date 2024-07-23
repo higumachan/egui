@@ -33,11 +33,11 @@ impl ImageCrateLoader {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ImageProcessingParameter {
     /// Affine transformations Rotate an image 90 degrees clockwise.
-    rotate_90_angle: u8,
+    pub rotate_90_angle: u8,
     /// [image::color_ops::contrast](https://docs.rs/image/latest/image/imageops/colorops/fn.contrast.html) parameter
-    contrast: f32,
+    pub contrast: f32,
     /// [image::color_ops::brighten](https://docs.rs/image/latest/image/imageops/colorops/fn.brighten.html) parameter
-    brighten: i32,
+    pub brighten: i32,
 }
 
 const ROTATE_90_ANGLE: &str = "rotate-90-angle";
