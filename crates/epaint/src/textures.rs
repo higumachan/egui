@@ -159,6 +159,7 @@ pub struct TextureOptions {
 
     /// How to wrap the texture when the texture coordinates are outside the [0, 1] range.
     pub wrap_mode: TextureWrapMode,
+    pub brighten: i16,
 }
 
 impl TextureOptions {
@@ -167,6 +168,7 @@ impl TextureOptions {
         magnification: TextureFilter::Linear,
         minification: TextureFilter::Linear,
         wrap_mode: TextureWrapMode::ClampToEdge,
+        brighten: 0,
     };
 
     /// Nearest magnification and minification.
@@ -174,6 +176,7 @@ impl TextureOptions {
         magnification: TextureFilter::Nearest,
         minification: TextureFilter::Nearest,
         wrap_mode: TextureWrapMode::ClampToEdge,
+        brighten: 0,
     };
 
     /// Linear magnification and minification, but with the texture repeated.
@@ -181,6 +184,7 @@ impl TextureOptions {
         magnification: TextureFilter::Linear,
         minification: TextureFilter::Linear,
         wrap_mode: TextureWrapMode::Repeat,
+        brighten: 0,
     };
 
     /// Linear magnification and minification, but with the texture mirrored and repeated.
@@ -188,6 +192,7 @@ impl TextureOptions {
         magnification: TextureFilter::Linear,
         minification: TextureFilter::Linear,
         wrap_mode: TextureWrapMode::MirroredRepeat,
+        brighten: 0,
     };
 
     /// Nearest magnification and minification, but with the texture repeated.
@@ -195,6 +200,7 @@ impl TextureOptions {
         magnification: TextureFilter::Nearest,
         minification: TextureFilter::Nearest,
         wrap_mode: TextureWrapMode::Repeat,
+        brighten: 0,
     };
 
     /// Nearest magnification and minification, but with the texture mirrored and repeated.
@@ -202,6 +208,7 @@ impl TextureOptions {
         magnification: TextureFilter::Nearest,
         minification: TextureFilter::Nearest,
         wrap_mode: TextureWrapMode::MirroredRepeat,
+        brighten: 0,
     };
 }
 

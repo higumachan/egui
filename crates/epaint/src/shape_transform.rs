@@ -97,6 +97,7 @@ pub fn adjust_colors(
             indices: _,
             vertices,
             texture_id: _,
+            brighten: _
         }) => {
             for v in vertices {
                 adjust_color(&mut v.color);

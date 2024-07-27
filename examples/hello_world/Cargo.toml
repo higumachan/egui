@@ -14,6 +14,7 @@ workspace = true
 [dependencies]
 eframe = { workspace = true, features = [
     "default",
+    "wgpu",
     "__screenshot", # __screenshot is so we can dump a screenshot using EFRAME_SCREENSHOT_TO
 ] }
 

@@ -144,6 +144,24 @@ impl PartialEq for UniformBuffer {
     }
 }
 
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[repr(C)]
+struct ImageParam {
+    brighten: f32,
+    // Uniform buffers need to be at least 16 bytes in WebGL.
+    // See https://github.com/gfx-rs/wgpu/issues/2072
+    _padding: [u32; 3],
+}
+
+impl ImageParam {
+    fn new(brighten: i16) -> Self {
+        Self {
+            brighten: brighten as f32 / 255.0,
+            _padding: [0, 0, 0],
+        }
+    }
+}
+
 struct SlicedBuffer {
     buffer: wgpu::Buffer,
     slices: Vec<Range<usize>>,
@@ -260,6 +278,16 @@ impl Renderer {
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            has_dynamic_offset: false,
+                            min_binding_size: NonZeroU64::new(std::mem::size_of::<ImageParam>() as _),
+                            ty: wgpu::BufferBindingType::Uniform,
+                        },
+                        count: None,
+                    }
                 ],
             })
         };
@@ -594,6 +622,21 @@ impl Renderer {
                 .samplers
                 .entry(image_delta.options)
                 .or_insert_with(|| create_sampler(image_delta.options, device));
+
+            let image_param = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("image_param"),
+                contents: bytemuck::cast_slice(&[ImageParam::new(image_delta.options.brighten)]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
+            let image_param_bind = wgpu::BufferBinding {
+                buffer: &image_param,
+                offset: 0,
+                size: None,
+            };
+
+
+
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label,
                 layout: &self.texture_bind_group_layout,
@@ -608,10 +651,20 @@ impl Renderer {
                         binding: 1,
                         resource: wgpu::BindingResource::Sampler(sampler),
                     },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Buffer(image_param_bind)
+                    }
                 ],
             });
             let origin = wgpu::Origin3d::ZERO;
             queue_write_data_to_texture(&texture, origin);
+
+            queue.write_buffer(
+                &image_param,
+                0,
+                bytemuck::cast_slice(&[ImageParam::new(image_delta.options.brighten)]),
+            );
             self.textures.insert(id, (Some(texture), bind_group));
         };
     }
@@ -699,6 +752,18 @@ impl Renderer {
             ..sampler_descriptor
         });
 
+        let image_param = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("image_param"),
+            contents: bytemuck::cast_slice(&[ImageParam::new(0)]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let image_param_bind = wgpu::BufferBinding {
+            buffer: &image_param,
+            offset: 0,
+            size: None,
+        };
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(format!("egui_user_image_{}", self.next_user_texture_id).as_str()),
             layout: &self.texture_bind_group_layout,
@@ -710,6 +775,10 @@ impl Renderer {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(image_param_bind),
                 },
             ],
         });
@@ -745,6 +814,19 @@ impl Renderer {
             ..sampler_descriptor
         });
 
+        let image_param = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("image_param"),
+            contents: bytemuck::cast_slice(&[ImageParam::new(100)]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let image_param_bind = wgpu::BufferBinding {
+            buffer: &image_param,
+            offset: 0,
+            size: None,
+        };
+
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(format!("egui_user_image_{}", self.next_user_texture_id).as_str()),
             layout: &self.texture_bind_group_layout,
@@ -756,6 +838,10 @@ impl Renderer {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(image_param_bind),
                 },
             ],
         });

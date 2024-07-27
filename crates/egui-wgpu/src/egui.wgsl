@@ -69,14 +69,20 @@ fn vs_main(
 
 // Fragment shader bindings
 
+struct ImageParam {
+    brighten: f32,
+}
+
 @group(1) @binding(0) var r_tex_color: texture_2d<f32>;
 @group(1) @binding(1) var r_tex_sampler: sampler;
+@group(1) @binding(2) var<uniform> r_image_param: ImageParam;
 
 @fragment
 fn fs_main_linear_framebuffer(in: VertexOutput) -> @location(0) vec4<f32> {
     // We always have an sRGB aware texture at the moment.
     let tex_linear = textureSample(r_tex_color, r_tex_sampler, in.tex_coord);
-    let tex_gamma = gamma_from_linear_rgba(tex_linear);
+    let tex_brighten = vec4<f32>(tex_linear.rgb + vec3<f32>(r_image_param.brighten), tex_linear.a);
+    let tex_gamma = gamma_from_linear_rgba(tex_brighten);
     let out_color_gamma = in.color * tex_gamma;
     return vec4<f32>(linear_from_gamma_rgb(out_color_gamma.rgb), out_color_gamma.a);
 }
@@ -85,7 +91,8 @@ fn fs_main_linear_framebuffer(in: VertexOutput) -> @location(0) vec4<f32> {
 fn fs_main_gamma_framebuffer(in: VertexOutput) -> @location(0) vec4<f32> {
     // We always have an sRGB aware texture at the moment.
     let tex_linear = textureSample(r_tex_color, r_tex_sampler, in.tex_coord);
-    let tex_gamma = gamma_from_linear_rgba(tex_linear);
+    let tex_brighten = vec4<f32>(tex_linear.rgb + vec3<f32>(r_image_param.brighten), tex_linear.a);
+    let tex_gamma = gamma_from_linear_rgba(tex_brighten);
     let out_color_gamma = in.color * tex_gamma;
     return out_color_gamma;
 }

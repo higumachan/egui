@@ -2,6 +2,7 @@
 #![allow(rustdoc::missing_crate_level_docs)] // it's an example
 
 use eframe::egui;
+use eframe::egui::{Image, Widget};
 
 fn main() -> eframe::Result {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -50,9 +51,10 @@ impl eframe::App for MyApp {
             }
             ui.label(format!("Hello '{}', age {}", self.name, self.age));
 
-            ui.image(egui::include_image!(
+
+            Image::new(egui::include_image!(
                 "../../../crates/egui/assets/ferris.png"
-            ));
+            )).brighten(self.age as i16).ui(ui);
         });
     }
 }

@@ -246,6 +246,13 @@ impl<'a> Image<'a> {
         self
     }
 
+    #[inline]
+    pub fn brighten(mut self, brighten: i16) -> Self {
+        self.texture_options.brighten = brighten;
+
+        self
+    }
+
     /// Show a spinner when the image is loading.
     ///
     /// By default this uses the value of [`Visuals::image_loading_spinners`].
