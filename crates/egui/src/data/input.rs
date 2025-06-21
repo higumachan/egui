@@ -943,6 +943,13 @@ impl std::ops::BitOr for Modifiers {
     }
 }
 
+impl std::ops::BitOrAssign for Modifiers {
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs;
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 /// Names of different modifier keys.
@@ -986,7 +993,7 @@ impl ModifierNames<'static> {
     };
 }
 
-impl<'a> ModifierNames<'a> {
+impl ModifierNames<'_> {
     pub fn format(&self, modifiers: &Modifiers, is_mac: bool) -> String {
         let mut s = String::new();
 

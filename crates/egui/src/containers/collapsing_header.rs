@@ -1,8 +1,12 @@
 use std::hash::Hash;
-use emath::Align;
-use crate::{emath, epaint, pos2, remap, remap_clamp, vec2, Context, FontSelection, Id, InnerResponse, NumExt, Rect, Response, Sense, Stroke, Style, TextStyle, TextWrapMode, Ui, Vec2, WidgetInfo, WidgetText, WidgetType};
-use epaint::Shape;
-use epaint::text::{TextWrapping};
+
+use crate::{
+    emath, epaint, pos2, remap, remap_clamp, vec2, Context, FontSelection, Id, InnerResponse, NumExt, Rect,
+    Response, Sense, Stroke, Style, TextStyle, TextWrapMode, Ui, Vec2, WidgetInfo, WidgetText, WidgetType,
+};
+use emath::{Align, GuiRounding as _};
+use epaint::{Shape, StrokeKind};
+use epaint::text::TextWrapping;
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -212,7 +216,7 @@ impl CollapsingState {
                     10.0
                 } else {
                     let full_height = self.state.open_height.unwrap_or_default();
-                    remap_clamp(openness, 0.0..=1.0, 0.0..=full_height)
+                    remap_clamp(openness, 0.0..=1.0, 0.0..=full_height).round_ui()
                 };
 
                 let mut clip_rect = child_ui.clip_rect();
@@ -280,7 +284,7 @@ pub struct HeaderResponse<'ui, HeaderRet> {
     header_response: InnerResponse<HeaderRet>,
 }
 
-impl<'ui, HeaderRet> HeaderResponse<'ui, HeaderRet> {
+impl<HeaderRet> HeaderResponse<'_, HeaderRet> {
     pub fn is_open(&self) -> bool {
         self.state.is_open()
     }
@@ -590,9 +594,10 @@ impl CollapsingHeader {
             if ui.visuals().collapsing_header_frame || show_background {
                 ui.painter().add(epaint::RectShape::new(
                     header_response.rect.expand(visuals.expansion),
-                    visuals.rounding,
+                    visuals.corner_radius,
                     visuals.weak_bg_fill,
                     visuals.bg_stroke,
+                    StrokeKind::Inside,
                 ));
             }
 
@@ -600,8 +605,13 @@ impl CollapsingHeader {
             {
                 let rect = rect.expand(visuals.expansion);
 
-                ui.painter()
-                    .rect(rect, visuals.rounding, visuals.bg_fill, visuals.bg_stroke);
+                ui.painter().rect(
+                    rect,
+                    visuals.corner_radius,
+                    visuals.bg_fill,
+                    visuals.bg_stroke,
+                    StrokeKind::Inside,
+                );
             }
 
             {

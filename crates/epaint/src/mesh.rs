@@ -6,7 +6,7 @@ use emath::{Pos2, Rect, Rot2, TSTransform, Vec2};
 /// Should be friendly to send to GPU as is.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[cfg(not(feature = "unity"))]
+#[cfg(any(not(feature = "unity"), feature = "_override_unity"))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::Pod, bytemuck::Zeroable))]
 pub struct Vertex {
@@ -25,7 +25,7 @@ pub struct Vertex {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[cfg(feature = "unity")]
+#[cfg(all(feature = "unity", not(feature = "_override_unity")))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::Pod, bytemuck::Zeroable))]
 pub struct Vertex {
@@ -96,6 +96,13 @@ impl Mesh {
 
     pub fn is_empty(&self) -> bool {
         self.indices.is_empty() && self.vertices.is_empty()
+    }
+
+    /// Iterate over the triangles of this mesh, returning vertex indices.
+    pub fn triangles(&self) -> impl Iterator<Item = [u32; 3]> + '_ {
+        self.indices
+            .chunks_exact(3)
+            .map(|chunk| [chunk[0], chunk[1], chunk[2]])
     }
 
     /// Calculate a bounding rectangle.

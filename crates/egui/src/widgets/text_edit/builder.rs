@@ -1,13 +1,16 @@
 use std::sync::Arc;
 
-use emath::Rect;
-use epaint::text::{cursor::CCursor, Galley, LayoutJob};
+use emath::{Rect, TSTransform};
+use epaint::{
+    text::{cursor::CCursor, Galley, LayoutJob},
+    StrokeKind,
+};
 
 use crate::{
     epaint,
     os::OperatingSystem,
     output::OutputEvent,
-    text_selection,
+    response, text_selection,
     text_selection::{
         text_cursor_state::cursor_rect, visuals::paint_text_selection, CCursorRange, CursorRange,
     },
@@ -88,11 +91,11 @@ pub struct TextEdit<'t> {
     background_color: Option<Color32>,
 }
 
-impl<'t> WidgetWithState for TextEdit<'t> {
+impl WidgetWithState for TextEdit<'_> {
     type State = TextEditState;
 }
 
-impl<'t> TextEdit<'t> {
+impl TextEdit<'_> {
     pub fn load_state(ctx: &Context, id: Id) -> Option<TextEditState> {
         TextEditState::load(ctx, id)
     }
@@ -126,7 +129,7 @@ impl<'t> TextEdit<'t> {
             layouter: None,
             password: false,
             frame: true,
-            margin: Margin::symmetric(4.0, 2.0),
+            margin: Margin::symmetric(4, 2),
             multiline: true,
             interactive: true,
             desired_width: None,
@@ -394,13 +397,13 @@ impl<'t> TextEdit<'t> {
 
 // ----------------------------------------------------------------------------
 
-impl<'t> Widget for TextEdit<'t> {
+impl Widget for TextEdit<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         self.show(ui).response
     }
 }
 
-impl<'t> TextEdit<'t> {
+impl TextEdit<'_> {
     /// Show the [`TextEdit`], returning a rich [`TextEditOutput`].
     ///
     /// ```
@@ -439,24 +442,27 @@ impl<'t> TextEdit<'t> {
                 if output.response.has_focus() {
                     epaint::RectShape::new(
                         frame_rect,
-                        visuals.rounding,
+                        visuals.corner_radius,
                         background_color,
                         ui.visuals().selection.stroke,
+                        StrokeKind::Inside,
                     )
                 } else {
                     epaint::RectShape::new(
                         frame_rect,
-                        visuals.rounding,
+                        visuals.corner_radius,
                         background_color,
                         visuals.bg_stroke, // TODO(emilk): we want to show something here, or a text-edit field doesn't "pop".
+                        StrokeKind::Inside,
                     )
                 }
             } else {
                 let visuals = &ui.style().visuals.widgets.inactive;
                 epaint::RectShape::stroke(
                     frame_rect,
-                    visuals.rounding,
+                    visuals.corner_radius,
                     visuals.bg_stroke, // TODO(emilk): we want to show something here, or a text-edit field doesn't "pop".
+                    StrokeKind::Inside,
                 )
             };
 
@@ -565,8 +571,8 @@ impl<'t> TextEdit<'t> {
         let mut response = ui.interact(outer_rect, id, sense);
         response.intrinsic_size = Some(Vec2::new(desired_width, desired_outer_size.y));
 
-        response.fake_primary_click = false; // Don't sent `OutputEvent::Clicked` when a user presses the space bar
-
+        // Don't sent `OutputEvent::Clicked` when a user presses the space bar
+        response.flags -= response::Flags::FAKE_PRIMARY_CLICKED;
         let text_clip_rect = rect;
         let painter = ui.painter_at(text_clip_rect.expand(1.0)); // expand to avoid clipping cursor
 
@@ -587,8 +593,8 @@ impl<'t> TextEdit<'t> {
                     && ui.input(|i| i.pointer.is_moving())
                 {
                     // text cursor preview:
-                    let cursor_rect =
-                        cursor_rect(rect.min, &galley, &cursor_at_pointer, row_height);
+                    let cursor_rect = TSTransform::from_translation(rect.min.to_vec2())
+                        * cursor_rect(&galley, &cursor_at_pointer, row_height);
                     text_selection::visuals::paint_cursor_end(&painter, ui.visuals(), cursor_rect);
                 }
 
@@ -723,14 +729,17 @@ impl<'t> TextEdit<'t> {
                 }
             }
 
-            // Allocate additional space if edits were made this frame that changed the size. This is important so that,
-            // if there's a ScrollArea, it can properly scroll to the cursor.
-            let extra_size = galley.size() - rect.size();
-            if extra_size.x > 0.0 || extra_size.y > 0.0 {
-                ui.allocate_rect(
-                    Rect::from_min_size(outer_rect.max, extra_size),
-                    Sense::hover(),
-                );
+            if !clip_text {
+                // Allocate additional space if edits were made this frame that changed the size. This is important so that,
+                // if there's a ScrollArea, it can properly scroll to the cursor.
+                // Condition `!clip_text` is important to avoid breaking layout for `TextEdit::singleline` (PR #5640)
+                let extra_size = galley.size() - rect.size();
+                if extra_size.x > 0.0 || extra_size.y > 0.0 {
+                    ui.allocate_rect(
+                        Rect::from_min_size(outer_rect.max, extra_size),
+                        Sense::hover(),
+                    );
+                }
             }
 
             painter.galley(galley_pos, galley.clone(), text_color);
@@ -738,16 +747,17 @@ impl<'t> TextEdit<'t> {
             if has_focus {
                 if let Some(cursor_range) = state.cursor.range(&galley) {
                     let primary_cursor_rect =
-                        cursor_rect(galley_pos, &galley, &cursor_range.primary, row_height);
+                        cursor_rect(&galley, &cursor_range.primary, row_height)
+                            .translate(galley_pos.to_vec2());
 
-                    if response.changed || selection_changed {
+                    if response.changed() || selection_changed {
                         // Scroll to keep primary cursor in view:
                         ui.scroll_to_rect(primary_cursor_rect + margin, None);
                     }
 
                     if text.is_mutable() && interactive {
                         let now = ui.ctx().input(|i| i.time);
-                        if response.changed || selection_changed {
+                        if response.changed() || selection_changed {
                             state.last_interaction_time = now;
                         }
 
@@ -794,7 +804,7 @@ impl<'t> TextEdit<'t> {
 
         state.clone().store(ui.ctx(), id);
 
-        if response.changed {
+        if response.changed() {
             response.widget_info(|| {
                 WidgetInfo::text_edit(
                     ui.is_enabled(),
@@ -837,7 +847,7 @@ impl<'t> TextEdit<'t> {
                 id,
                 cursor_range,
                 role,
-                galley_pos,
+                TSTransform::from_translation(galley_pos.to_vec2()),
                 &galley,
             );
         }
