@@ -537,7 +537,7 @@ impl CollapsingHeader {
         let available = ui.available_rect_before_wrap();
         let text_pos = available.min + vec2(ui.spacing().indent, 0.0);
         let wrap_width = available.right() - text_pos.x;
-        let wrap = Some(header_truncate);
+        let _wrap = Some(header_truncate);
 
         let galley = if header_truncate {
             let mut layout = text.into_layout_job(&Style::default(), FontSelection::Default, Align::Min);
@@ -560,7 +560,7 @@ impl CollapsingHeader {
 
         let mut header_response = ui.interact(rect, id, Sense::click());
 
-        let mut header_response = if galley.elided {
+        let header_response = if galley.elided {
             header_response.on_hover_text(galley.text())
         } else {
             header_response
